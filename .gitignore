@@ -1,0 +1,7 @@
+.vscode/
+build/
+_config.yml
+CMakeLists.txt
+sdkconfig
+sdkconfig.defaults
+sdkconfig.old

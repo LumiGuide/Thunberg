@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <style>
+      
+      p, h2, label {
+          color: white;
+      }
+
+      .white {
+          color: white;
+      }
+
+      .wide {
+          width: 200px;
+      }
+      .small {
+          width: 100px;
+      }
+    </style>
+
+    <title>Thunberg Climate Control</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+	    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+    
+    <script>
+	window.onload = function() {
+		const settingsAirco = document.getElementById("airco");
+        const settingsTemp = document.getElementById("temp-input");
+        const tempView = document.getElementById("temp-view");
+        const settingsMode = document.getElementById("mode");
+        const settingsStrength = document.getElementById("strength");
+        const settingsStatus = document.getElementById("toppings");
+        const sendBtn = document.getElementById("send-btn");
+        const sendTxt = document.getElementById("send-text");
+        const sendLd = document.getElementById("send-load");
+        const offBtn = document.getElementById("off-btn");
+        const offTxt = document.getElementById("off-text");
+        const offLd = document.getElementById("off-load");
+        const killallBtn = document.getElementById("kill-btn");
+        const killallTxt = document.getElementById("kill-text");
+        const killallLd = document.getElementById("kill-load");
+        const timeView = document.getElementById("time-view");
+        const syncView = document.getElementById("sync-view");
+
+        function getsettings(settingsAirco){
+            settingsTemp.disabled = true;
+            settingsMode.disabled = true;
+            settingsStrength.disabled = true;
+            settingsStatus.disabled = true;
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            sendTxt.hidden = true;
+            sendLd.hidden = false;
+            offTxt.hidden = true;
+            offLd.hidden = false;
+            fetch('http://' + settingsAirco.value + '/settings', {
+                method: 'GET'
+            })
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .then((response) => response.json())
+                .then(function(data) {
+                    const parsedObj = data;
+                    settingsTemp.valueAsNumber = parsedObj.temperature;
+                    tempView.textContent = parsedObj.temperature;
+                    settingsMode.value = parsedObj.mode;
+                    settingsStrength.value = parsedObj.strength;
+                    settingsStatus.value = parsedObj.status;
+                    timeView.textContent = parsedObj.time;
+                    syncView.textContent = parsedObj.sync;
+                })
+                .then(function() {
+                    settingsTemp.disabled = false;
+                    settingsMode.disabled = false;
+                    settingsStrength.disabled = false;
+                    settingsStatus.disabled = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    sendTxt.hidden = false;
+                    sendLd.hidden = true;
+                    offTxt.hidden = false;
+                    offLd.hidden = true;
+                });
+            };
+        
+        settingsTemp.disabled = true;
+        settingsMode.disabled = true;
+        settingsStrength.disabled = true;
+        settingsStatus.disabled = true;
+        sendBtn.disabled = true;
+        offBtn.disabled = true;
+
+        settingsAirco.onchange = function(settingsAirco){
+            getsettings(settingsAirco.target);
+        };
+
+        settingsTemp.oninput = function(e) {
+        	tempView.textContent = e.target.value;
+        };
+        
+        sendBtn.onclick = function() {
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            killallBtn.disabled = true;
+            sendTxt.hidden = true;
+            sendLd.hidden = false;
+
+			const myForm = {
+                temperature: settingsTemp.valueAsNumber,
+                mode: settingsMode.value,
+                strength: settingsStrength.value,
+                status: settingsStatus.value,
+                power: "on"
+            };
+
+            const myJSON = JSON.stringify(myForm);
+
+            fetch('http://' + settingsAirco.value + '/settings', {
+                method: 'POST',
+                body: myJSON
+            })
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .finally(function(){
+                    sendLd.hidden = true;
+                    sendTxt.hidden = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    killallBtn.disabled = false;
+                });
+        };
+        
+        offBtn.onclick = function() {
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            killallBtn.disabled = true;
+            offTxt.hidden = true;
+            offLd.hidden = false;
+
+            const myForm = {
+                temperature: settingsTemp.valueAsNumber,
+                mode: settingsMode.value,
+                strength: settingsStrength.value,
+                status: settingsStatus.value,
+                power: "off"
+            };
+
+            const myJSON = JSON.stringify(myForm);
+            
+            fetch('http://' + settingsAirco.value + '/settings', {
+                method: 'POST',
+                body: myJSON
+            })
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .finally(function(){
+                    offLd.hidden = true;
+                    offTxt.hidden = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    killallBtn.disabled = false;
+                });
+
+        };
+        
+        killallBtn.onclick = function() {
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            killallBtn.disabled = true;
+            killallTxt.hidden = true;
+            killallLd.hidden = false;
+
+            const myForm = {
+                temperature: settingsTemp.valueAsNumber,
+                mode: settingsMode.value,
+                strength: settingsStrength.value,
+                status: settingsStatus.value,
+                power: "off"
+            };
+            const myJSON = JSON.stringify(myForm);
+            
+            function myPromise(ip){
+                return fetch('http://10.0.24.' + ip + '/settings', {
+                    method: 'POST',
+                    body: myJSON
+                });
+            }
+
+            Promise.allSettled([myPromise(21), myPromise(22), myPromise(23), myPromise(24), myPromise(25), myPromise(26), myPromise(27), myPromise(28)])
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .finally(function(){
+                    killallLd.hidden = true;
+                    killallTxt.hidden = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    killallBtn.disabled = false;
+                });
+        };
+	};  
+
+	</script>
+</head>
+<body style="background-color:#000000;">
+<center>
+<br>
+<br>
+<h2>THUNBERG CLIMATE CONTROL</h2>
+<br>
+<hr class="white">
+<br>
+<br>
+<form id="settingsForm" method="post">
+  <p>Room:</p>
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="airco">
+    <option value="empty" disabled selected>Select the room</option>
+    <option value="10.0.24.21">Hardware</option>
+    <option value="10.0.24.22">Software</option>
+    <option value="10.0.24.23">Design</option>
+    <option value="10.0.24.24">Canteen</option>
+    <option value="10.0.24.25">Conference</option>
+    <option value="10.0.24.26">C-Suite</option>
+    <option value="10.0.24.27">Flexwork Left</option>
+    <option value="10.0.24.28">Flexwork Right</option>
+  	</select>
+  	<br><br>
+    
+  	<label>Temperature: <span id="temp-view">loading..</span></label>
+	<input type="range" class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" min="20" max="30" step="1" id="temp-input">
+  	<br>
+    
+  <p>Mode:</p>
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="mode">
+    <option selected value="auto">Auto</option>
+    <option value="cool">Cool</option>
+    <option value="dry">Dry</option>
+    <option value="fan">Fan</option>
+    <option value="heat">Heat</option>
+  </select>
+  <br><br>
+
+  <p>Strength:</p>
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="strength">
+    <option selected value="auto">Auto</option>
+    <option value="high">High</option>
+    <option value="med">Med</option>
+    <option value="low">Low</option>
+    <option value="quiet">Quiet</option>
+  </select>
+  <br><br>
+
+  <p>Toppings:</p>
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="toppings">
+    <option selected value="normal">Normal</option>
+    <option value="powerful">Powerful</option>
+    <option value="economy">Economy</option>
+  </select>
+  <br><br>
+  <button type="button" class="btn btn-light small" style='margin-right:5px' id="send-btn" value="send">
+    <span id="send-text">Send</span>
+    <span hidden class="spinner-border spinner-border-sm" id="send-load"></span></button>
+  <button type="button" class="btn btn-danger small" id="off-btn" value="off">
+    <span id="off-text">Turn Off</span>
+<span hidden class="spinner-border spinner-border-sm" id="off-load"></span></button>
+</form>
+
+<br>
+
+<hr class="white">
+
+<br>
+ 
+<p>Turn off all aircos and make Thunberg happy.</p>
+<button type="button" class="btn btn-danger wide" id="kill-btn">
+<span id="kill-text">KILL ALL</span>
+<span hidden class="spinner-border spinner-border-sm" id="kill-load"></span>
+</button>
+
+<br><br>
+
+<hr class="white">
+
+<br>
+<p>Date & time of GET request: <span id="time-view">loading..</span></p>
+<p>Last NTP synchronisation: <span id="sync-view">loading..</span></p>
+
+</center>
+</body>
+</html>

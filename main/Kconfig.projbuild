@@ -1,0 +1,51 @@
+menu "Thunberg Climate Control"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "SSID not set"
+        help
+            Enter the SSID (network name) to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi password"
+        default "Password not set"
+        help
+            Enter the Wifi password.
+
+    choice AIRCO_BRAND
+        prompt "Select airco brand"
+        default AIRCO_FUJI
+        help
+            Select the brand of the airco.
+        config AIRCO_FUJI
+            bool "Fuji airco"
+            help
+                Fuji brand
+        config AIRCO_MITSUBISHI
+            bool "Mitsubishi airco"
+            help
+                Mitsubishi brand
+    endchoice
+
+    choice AIRCO_WEBSITE
+        prompt "Host website on this device"
+        default AIRCO_HOST
+        help
+            Select 'host' if you want to host the website on this device.
+        config AIRCO_HOST
+            bool "Yes, host website"
+            help
+                Host website on this device
+        config AIRCO_LISTEN
+            bool "No, receive signals only"
+            help
+                Don't host website on this device, receive signals only
+    endchoice
+
+    config SNTP_TIME_SERVER
+        string "SNTP server name"
+        default "pool.ntp.org"
+        help
+            Hostname of the main SNTP server.
+            
+endmenu
