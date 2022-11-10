@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+
+window.onload = function() {
+	const form = document.getElementById("settings");
+
+	console.log(form);
+};
+
+</script>
+</head>
+<body>
+
+<h2>HTML Forms</h2>
+
+<form id="settings" method="post">
+  <label for="lname">Airco:</label><br>
+  <select multiple class="chosen-select">
+    <option>1. Software</option>
+    <option>2. Hardware</option>
+    <option>3. Design</option>
+    <option>4. Canteen</option>
+  </select>
+  <br><br>
+  <label for="temp">Temperature:</label><br>
+  <input min=16 max=30 type="number" id="temp" name="temp" value="20">
+  <br><br>
+  <label for="lname">Mode:</label><br>
+  <select multiple class="chosen-select">
+    <option>1. Auto</option>
+    <option>2. Cool</option>
+    <option>3. Dry</option>
+    <option>4. Fan</option>
+    <option>5. Heat</option>
+  </select>
+  <br><br>
+  <label for="lname">Strength:</label><br>
+  <select multiple class="chosen-select">
+    <option>1. Auto</option>
+    <option>2. High</option>
+    <option>3. Med</option>
+    <option>4. Low</option>
+    <option>5. Quiet</option>
+  </select>
+  <br><br>
+  <label for="lname">Status:</label><br>
+  <select multiple class="chosen-select">
+    <option>1. Normal</option>
+    <option>2. Powerful</option>
+    <option>3. Economy</option>
+    <option>4. Off</option>
+  </select>
+  <br><br>
+  <input type="submit" value="Submit">
+</form> 
+
+<p>If you click the "Submit" button, the form-data will be sent to a page called "/action_page.php".</p>
+
+</body>
+</html>

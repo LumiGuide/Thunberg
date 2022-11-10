@@ -1,0 +1,18 @@
+menu "Airco Configuration"
+
+    choice AIRCO_BRAND
+        prompt "Select airco brand"
+        default AIRCO_FUJI
+        help
+            Select the brand of the airco.
+        config AIRCO_FUJI
+            bool "Fuji airco"
+            help
+                Fuji brand
+        config AIRCO_MITSUBISHI
+            bool "Mitsubishi airco"
+            help
+                Mitsubishi brand
+    endchoice
+
+endmenu
