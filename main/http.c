@@ -1,6 +1,5 @@
 #include "http.h"
 #include <stdio.h>
-#include <esp_http_server.h>
 #include <esp_log.h>
 #include <esp_system.h>
 #include <sys/param.h>
@@ -22,8 +21,6 @@ static const char *REST_TAG = "get html";
 // enum strength_t{autostrength, high, med, low, quiet};
 // enum status_t{normal, powerful, economy, off};
 
-//TODO: niet global maken
-struct circ_buf* rowan;
 
 struct signal_settings send_settings;
 //TODO: dit bij initialisatie
@@ -80,7 +77,6 @@ static esp_err_t get_index_handler(httpd_req_t *req)
             httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
             return ESP_FAIL;
         }
-        printf("read: %s\n", chunk);
         r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
     }
 
@@ -222,8 +218,7 @@ static esp_err_t post_settings_handler(httpd_req_t *req)
         send_settings.turnoff = true;
     }
     
-
-    buffer_push((struct circ_buf*) rowan, &send_settings);
+    buffer_push((struct circ_buf*) req->user_ctx, &send_settings);
 
     //TODO: cJSON_Delete ?
 
@@ -269,7 +264,7 @@ esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
     return ESP_FAIL;
 }
 
-httpd_handle_t start_webserver(void)
+httpd_handle_t start_webserver(struct circ_buf* buffer)
 {
     char* rest_context = (char *)malloc(sizeof(char) * SCRATCH_BUFSIZE);
 
@@ -291,7 +286,7 @@ httpd_handle_t start_webserver(void)
         .uri       = "/settings",
         .method    = HTTP_POST,
         .handler   = post_settings_handler,
-        .user_ctx  = NULL
+        .user_ctx  = buffer
     };
 
     httpd_handle_t server = NULL;
@@ -349,58 +344,52 @@ void stop_webserver(httpd_handle_t server)
 
 void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    httpd_handle_t* server = (httpd_handle_t*) arg;
-    if (*server) {
+    struct server_ctx_t* server_ctx = (struct server_ctx_t*) arg;
+    if (server_ctx->server) {
         ESP_LOGI(TAG, "Stopping webserver");
-        stop_webserver(*server);
-        *server = NULL;
+        stop_webserver(server_ctx->server);
+        server_ctx->server = NULL;
     }
 }
 
 void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    httpd_handle_t* server = (httpd_handle_t*) arg;
-    if (*server == NULL) {
+    struct server_ctx_t* server_ctx = (struct server_ctx_t*) arg;
+    if (server_ctx->server == NULL) {
         ESP_LOGI(TAG, "Starting webserver");
-        *server = start_webserver();
+        server_ctx->server = start_webserver(server_ctx->buffer);
     }
 }
 
-void save_struct_location(struct circ_buf* location)
-{
-    rowan = location;
-}
-
-
-bool to_enum_airco(char* input, enum airco_t* location)
+bool to_enum_airco(char* input, enum airco_t* out)
 {
    if (strcmp(input, "software") == 0)
     {
-        *location = software;
+        *out = software;
     }
     else if (strcmp(input, "hardware") == 0)
     {
-        *location = hardware;
+        *out = hardware;
     }
     else if (strcmp(input, "design") == 0)
     {
-        *location = design;
+        *out = design;
     }
     else if (strcmp(input, "canteen") == 0)
     {
-        *location = canteen;
+        *out = canteen;
     }
     else if (strcmp(input, "ceo") == 0)
     {
-        *location = ceo;
+        *out = ceo;
     }
     else if (strcmp(input, "conference") == 0)
     {
-        *location = conference;
+        *out = conference;
     }
     else if (strcmp(input, "flexwork") == 0)
     {
-        *location = flexwork;
+        *out = flexwork;
     }
     else
     {

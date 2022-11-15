@@ -21,12 +21,8 @@
 #include "circular_buffer.h"
 #include "wifi.h"
 #include "http.h"
-#define AIRCO_FUJI              1
-#if AIRCO_FUJI
-#include "fuji.h"
-#elif AIRCO_MITSUBISHI
-#include "mitsubishi.h"
-#endif
+#include "ir_sender.h"
+
 
 #define TAG "spiffs"
 
@@ -37,19 +33,20 @@ void app_main(void)
 	esp_timer_early_init();
 
 	//SERVER OPZETTEN
-	static httpd_handle_t server = NULL;
+	struct server_ctx_t* serv_ctx = (struct server_ctx_t*)malloc(sizeof(struct server_ctx_t));
+	serv_ctx->server = NULL;
+	serv_ctx->buffer = buffer_init(sizeof(struct signal_settings), 3, false);
 
 	ESP_ERROR_CHECK(nvs_flash_init());
 	ESP_ERROR_CHECK(esp_netif_init());
 	ESP_ERROR_CHECK(esp_event_loop_create_default());
 
 	// ESP_ERROR_CHECK(init_fs());
-
-	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
-	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
+	ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, serv_ctx));
+	ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, serv_ctx));
 
 	ESP_ERROR_CHECK(connect());
-	
+
 	// Set the LEDC peripheral configuration
     ledc_init();
     // Set duty to 0%
@@ -57,10 +54,7 @@ void app_main(void)
     // Update duty to apply the new value
     ESP_ERROR_CHECK(ledc_update_duty(LEDC_MODE, LEDC_CHANNEL));
 
-    struct circ_buf* rowan = buffer_init(sizeof(struct signal_settings), 3, false);
-    save_struct_location(rowan);
-
-    xTaskCreate(&IR_sender, "IR_sender", 2048, (void*) rowan, 2, &handle_sender);
+    xTaskCreate(&IR_sender, "IR_sender", 2048, (void*) serv_ctx->buffer, 2, &handle_sender);
 
 	spiff_config ();
 	

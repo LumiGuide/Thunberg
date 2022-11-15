@@ -1,4 +1,4 @@
-#include "mitsubishi.h"
+#include "ir_sender.h"
 #include <esp_log.h>
 #include "driver/ledc.h"
 #include "circular_buffer.h"

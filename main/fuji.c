@@ -1,4 +1,4 @@
-#include "fuji.h"
+#include "ir_sender.h"
 #include <esp_log.h>
 #include "driver/ledc.h"
 #include "circular_buffer.h"
@@ -23,6 +23,8 @@ const uint8_t HIGH_S = 0b00000001;
 const uint8_t MED_S = 0b00000010;
 const uint8_t LOW_S = 0b00000011;
 const uint8_t QUIET_S = 0b00000100;
+
+uint8_t checksum(uint8_t base, uint8_t* signal, size_t len);
 
 static const char *TAG = "fuji program";
 

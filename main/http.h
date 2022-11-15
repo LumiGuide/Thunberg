@@ -2,6 +2,7 @@
 
 #include <esp_event.h>
 #include "circular_buffer.h"
+#include <esp_http_server.h>
 
 enum airco_t{software, hardware, design, canteen, ceo, conference, flexwork};
 enum mode_t{automode, cool, dry, fan, heat};
@@ -15,6 +16,11 @@ struct signal_settings {
     enum strength_t strength; //AUTO/HIGH/MED/LOW/QUIET
     enum status_t status; //NORMAL/POWERFUL/ECONOMY/OFF
     bool turnoff;
+};
+
+struct server_ctx_t{
+	httpd_handle_t server;
+	struct circ_buf* buffer;
 };
 
 void spiff_config (void);
