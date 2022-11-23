@@ -20,7 +20,6 @@ struct circ_buf* buffer_init(size_t elementsize, size_t length, bool nonblocking
     (*youneedthis).convar = PTHREAD_COND_INITIALIZER;
     (*youneedthis).buffer = youneedthis + 1;
     
-    printf("__________buffer pointer  init = %p\n", youneedthis);
     return youneedthis;
 }
 

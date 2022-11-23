@@ -16,7 +16,4 @@
 #define LEDC_FREQUENCY          (38000) // Frequency in Hertz. Set frequency at 38 kHz
 
 void IR_sender(void* rowan);
-void send_signal(struct signal_settings settings, uint8_t* signal);
-void send_inverted(uint8_t* signal, size_t length);
-void ir_led(bool, int);
 void ledc_init(void);

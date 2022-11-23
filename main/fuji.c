@@ -24,7 +24,10 @@ const uint8_t MED_S = 0b00000010;
 const uint8_t LOW_S = 0b00000011;
 const uint8_t QUIET_S = 0b00000100;
 
+void send_signal(struct signal_settings settings, uint8_t* signal);
 uint8_t checksum(uint8_t base, uint8_t* signal, size_t len);
+void send_inverted(uint8_t* signal, size_t length);
+void ir_led(bool, int);
 
 static const char *TAG = "fuji program";
 
@@ -51,7 +54,6 @@ void IR_sender(void* rowan)
             continue;
         }
 
-        printf("airco: %i\n", settings.airco);
         printf("temp: %i\n", settings.temp);
         printf("mode: %i\n", settings.mode);
         printf("strength: %i\n", settings.strength);
@@ -100,7 +102,6 @@ void IR_sender(void* rowan)
             }
             //TODO: else voor undef behaviour?
         }
-        //TODO: airco nummer toevoegen en alleen daar uitzenden
 	}
 }
 
@@ -243,7 +244,7 @@ void send_inverted(uint8_t* signal, size_t length)
 
     taskEXIT_CRITICAL(&test);
     
-    printf("! signal sent\n");
+    printf("! fuji signal sent\n");
 }
 
 void ir_led(bool x, int t)

@@ -1,4 +1,4 @@
-menu "Airco Configuration"
+menu "Thunberg Climate Control"
 
     choice AIRCO_BRAND
         prompt "Select airco brand"
@@ -13,6 +13,21 @@ menu "Airco Configuration"
             bool "Mitsubishi airco"
             help
                 Mitsubishi brand
+    endchoice
+
+    choice AIRCO_SERVER
+        prompt "Host server on this device"
+        default AIRCO_HOST
+        help
+            Select 'host' if you want to host the server on this device.
+        config AIRCO_HOST
+            bool "Yes, host server"
+            help
+                Host server on this device
+        config AIRCO_LISTEN
+            bool "No, receive signals only"
+            help
+                Don't host server on this device, receive signals only
     endchoice
 
 endmenu

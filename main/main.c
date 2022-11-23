@@ -47,6 +47,7 @@ void app_main(void)
 
 	ESP_ERROR_CHECK(connect());
 
+
 	// Set the LEDC peripheral configuration
     ledc_init();
     // Set duty to 0%
@@ -56,48 +57,7 @@ void app_main(void)
 
     xTaskCreate(&IR_sender, "IR_sender", 2048, (void*) serv_ctx->buffer, 2, &handle_sender);
 
+	#if CONFIG_AIRCO_HOST
 	spiff_config ();
-	
-	//VANAF HIER SPIFFS
-	// esp_vfs_spiffs_conf_t config = {
-	// 	.base_path = "/spiffs",
-	// 	.partition_label = NULL,
-	// 	.max_files = 5,
-	// 	.format_if_mount_failed = true,
-	// };
-	// esp_err_t ret = esp_vfs_spiffs_register(&config);
-
-	// if (ret != ESP_OK) {
-    //     if (ret == ESP_FAIL) {
-    //         ESP_LOGE(TAG, "Failed to mount or format filesystem");
-    //     } else if (ret == ESP_ERR_NOT_FOUND) {
-    //         ESP_LOGE(TAG, "Failed to find SPIFFS partition");
-    //     } else {
-    //         ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(ret));
-    //     }
-    // }
-
-	// size_t total = 0, used = 0;
-    // ret = esp_spiffs_info(NULL, &total, &used);
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
-    // } else {
-    //     ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
-    // }
-
-	// FILE *file = fopen("/spiffs/hello.txt", "r");
-	// if(file ==NULL)
-	// {
-	//   ESP_LOGE(TAG,"File does not exist!");
-	// }
-	// else 
-	// {
-	// 	char line[256];
-	// 	while(fgets(line, sizeof(line), file) != NULL)
-	// {
-	// 	printf(line);
-	// }
-	// fclose(file);
-	// }
-	// esp_vfs_spiffs_unregister(NULL);
+	#endif
 }

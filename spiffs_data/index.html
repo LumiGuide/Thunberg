@@ -1,7 +1,3 @@
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -32,14 +28,82 @@
     
     <script>
 	window.onload = function() {
-		const tempInput = document.getElementById("temp-input");
+		const settingsAirco = document.getElementById("airco");
+        const tempInput = document.getElementById("temp-input");
         const tempView = document.getElementById("temp-view");
-        const send = document.getElementById("send-btn");
-        const turnoff = document.getElementById("off-btn");
-        const killall = document.getElementById("kill-btn");
-		        
+        const settingsMode = document.getElementById("mode");
+        const settingsStrength = document.getElementById("strength");
+        const settingsStatus = document.getElementById("toppings");
+        const sendBtn = document.getElementById("send-btn");
+        const offBtn = document.getElementById("off-btn");
+        const killallBtn = document.getElementById("kill-btn");
+        
+        function reqListener() {
+  			console.log(this.responseText);
+            // hier settings impl.
+		}
+        
+        const xhr = new XMLHttpRequest();
+        xhr.addEventListener("load", reqListener);
+		xhr.open("GET", 'http://' + settingsAirco.value + '/settings', true);
+		xhr.send();
+        
         tempInput.oninput = function(e) {
         	tempView.textContent = e.target.value;
+        };
+        
+        sendBtn.onclick = function() {
+			const myForm = {
+                temperature: tempInput.valueAsNumber,
+                mode: settingsMode.value,
+                strength: settingsStrength.value,
+                status: settingsStatus.value,
+                power: "on"
+            };
+            const myJSON = JSON.stringify(myForm);
+			const xhr = new XMLHttpRequest();
+			xhr.open("POST", 'http://' + settingsAirco.value + '/settings', true);
+			xhr.send(myJSON);
+        };
+        
+        offBtn.onclick = function() {
+            const myForm = {
+                temperature: tempInput.valueAsNumber,
+                mode: settingsMode.value,
+                strength: settingsStrength.value,
+                status: settingsStatus.value,
+                power: "off"
+            };
+            const myJSON = JSON.stringify(myForm);
+			const xhr = new XMLHttpRequest();
+			xhr.open("POST", 'http://' + settingsAirco.value + '/settings', true);
+			xhr.send(myJSON);
+        };
+        
+        killallBtn.onclick = function() {
+            const myForm = {
+                temperature: tempInput.valueAsNumber,
+                mode: settingsMode.value,
+                strength: settingsStrength.value,
+                status: settingsStatus.value,
+                power: "off"
+            };
+            const myJSON = JSON.stringify(myForm);
+			const xhr = new XMLHttpRequest();
+			xhr.open("POST", 'http://10.0.24.21/settings', true);
+			xhr.send(myJSON);
+            xhr.open("POST", 'http://10.0.24.22/settings', true);
+			xhr.send(myJSON);
+            //xhr.open("POST", 'http://10.0.24.23/settings', true);
+			//xhr.send(myJSON);
+            //xhr.open("POST", 'http://10.0.24.24/settings', true);
+			//xhr.send(myJSON);
+            //xhr.open("POST", 'http://10.0.24.25/settings', true);
+			//xhr.send(myJSON);
+            //xhr.open("POST", 'http://10.0.24.26/settings', true);
+			//xhr.send(myJSON);
+            //xhr.open("POST", 'http://10.0.24.27/settings', true);
+			//xhr.send(myJSON);
         };
 	};
 
@@ -54,16 +118,16 @@
 <hr class="white">
 <br>
 <br>
-<form id="settings" method="post">
+<form id="settingsForm" method="post">
   <p>Airco:</p>
-  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" aria-label="airco">
-    <option selected value="software">Software</option>
-    <option value="hardware">Hardware</option>
-    <option value="design">Design</option>
-    <option value="canteen">Canteen</option>
-    <option value="ceo">CEO</option>
-    <option value="conference">Conference</option>
-    <option value="flexwork">Flexwork</option>
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="airco">
+    <option selected value="10.0.24.21">Hardware</option>
+    <option value="10.0.24.22">Software</option>
+    <option value="10.0.24.23">Design</option>
+    <option value="10.0.24.24">Canteen</option>
+    <option value="10.0.24.25">Conference</option>
+    <option value="10.0.24.26">CEO</option>
+    <option value="10.0.24.27">Flexwork</option>
   	</select>
   	<br><br>
     
@@ -72,7 +136,7 @@
   	<br>
     
   <p>Mode:</p>
-  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" aria-label="mode">
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="mode">
     <option selected value="auto">Auto</option>
     <option value="cool">Cool</option>
     <option value="dry">Dry</option>
@@ -82,7 +146,7 @@
   <br><br>
 
   <p>Strength:</p>
-  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" aria-label="strength">
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="strength">
     <option selected value="auto">Auto</option>
     <option value="high">High</option>
     <option value="med">Med</option>
@@ -92,22 +156,28 @@
   <br><br>
 
   <p>Toppings:</p>
-  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" aria-label="toppings">
+  <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="toppings">
     <option selected value="normal">Normal</option>
     <option value="powerful">Powerful</option>
     <option value="economy">Economy</option>
   </select>
   <br><br>
   <button type="button" class="btn btn-light small" id="send-btn" value="send">Send</button> <button type="button" class="btn btn-danger small" id="off-btn" value="off">Turn Off</button>
-</form> 
-<br><br>
+</form>
 
 <hr class="white">
 
 <br>
  
- <p>Turn off all aircos and make Thunberg happy.</p>
- <button type="button" class="btn btn-danger wide" id="kill-btn">KILL ALL</button>
+<p>Turn off all aircos and make Thunberg happy.</p>
+<button type="button" class="btn btn-danger wide" id="kill-btn">KILL ALL</button>
+<br><br><br>
+<p>- Response lezen ander IP adres</p>
+<p>- GET request van ander IP adres accepteren</p>
+<p>   https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin</p>
+<p>- GET op onLoad, dan op verandering van airco. Settings weergeven</p>
+<p>- Kill All naar alle IP adressen: javascript promises explained tutorial</p>
+<p>- spinner of input disable tot pagina geladen</p>
 </center>
 </body>
 </html>

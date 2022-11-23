@@ -5,23 +5,37 @@
 #include "esp32/rom/ets_sys.h"
 
 
-const int ANNOUNCE = 365;
-const int ZERO = 427;
-const int ONE = 1220;
+const int ANNOUNCE = 375;
+const int ZERO = 395;
+const int ONE = 1190;
 const int START_A = 3160;
-const int START_B = 1610;
+const int START_B = 1580;
 
 const uint8_t AUTO_MODE_S = 0b00001000;
 const uint8_t COOL_S = 0b00001001;
 const uint8_t DRY_S = 0b00001010;
 const uint8_t FAN_S = 0b00001011;
 const uint8_t HEAT_S = 0b00001100;
-const uint8_t OFF_S = 0b00000000;
-const uint8_t AUTO_FAN_S = 0b00000000;
-const uint8_t ONE_S = 0b00000001;
-const uint8_t TWO_S = 0b00000010;
-const uint8_t THREE_S = 0b00000011;
-const uint8_t FOUR_S = 0b00000100;
+const uint8_t OFF_AUTO_S = 0b00000000;
+const uint8_t OFF_COOL_S = 0b00000001;
+const uint8_t OFF_DRY_S = 0b00000010;
+const uint8_t OFF_FAN_S = 0b00000011;
+const uint8_t OFF_HEAT_S = 0b00000100;
+const uint8_t FAN_AUTO_S = 0b00000000;
+const uint8_t FAN_ONE_S = 0b00000001;
+const uint8_t FAN_TWO_S = 0b00000010;
+const uint8_t FAN_THREE_S = 0b00000011;
+const uint8_t FAN_FOUR_S = 0b00000100;
+const uint8_t POWERF_AUTO_S = 0b00001000;
+const uint8_t POWERF_ONE_S = 0b00001001;
+const uint8_t POWERF_TWO_S = 0b00001010;
+const uint8_t POWERF_THREE_S = 0b00001011;
+const uint8_t POWERF_FOUR_S = 0b00001100;
+const uint8_t ECONOMY_S = 0b00000110;
+
+void send_signal(struct signal_settings settings, uint8_t* signal);
+void send_inverted(uint8_t* signal, size_t length);
+void ir_led(bool, int);
 
 static const char *TAG = "mitsubishi program";
 
@@ -56,46 +70,70 @@ void IR_sender(void* rowan)
             continue;
         }
 
-        printf("airco: %i\n", settings.airco);
         printf("temp: %i\n", settings.temp);
         printf("mode: %i\n", settings.mode);
         printf("strength: %i\n", settings.strength);
         printf("status: %i\n", settings.status);
+        printf("turnoff: %d\n", settings.turnoff);
         send_signal(settings, signal);
-        send_inverted(signal, 19);
-        //TODO: airco nummer toevoegen en alleen daar uitzenden
 	}
 }
 
 void send_signal(struct signal_settings settings, uint8_t* signal)
 {
-    switch(settings.mode){
-        case automode:
-            signal[6] = AUTO_MODE_S;
-        break;
+    if (settings.turnoff == false)
+    {
+        switch(settings.mode){
+            case automode:
+                signal[6] = AUTO_MODE_S;
+            break;
 
-        case cool:
-            signal[6] = COOL_S;
-        break;
+            case cool:
+                signal[6] = COOL_S;
+            break;
 
-        case dry:
-            signal[6] = DRY_S;
-        break;
+            case dry:
+                signal[6] = DRY_S;
+            break;
 
-        case fan:
-            signal[6] = FAN_S;
-        break;
+            case fan:
+                signal[6] = FAN_S;
+            break;
 
-        case heat:
-            signal[6] = HEAT_S;
-        break;
+            case heat:
+                signal[6] = HEAT_S;
+            break;
 
-        // case off:
-        //     signal[6] = OFF_S;
-        // break;
+            default:
+                ESP_LOGI(TAG, "ERROR: Invalid mode value");
+        }
+    }
+    else
+    {
+        switch(settings.mode){
+            case automode:
+                signal[6] = OFF_AUTO_S;
+            break;
 
-        default:
-            ESP_LOGI(TAG, "ERROR: Invalid mode value");
+            case cool:
+                signal[6] = OFF_COOL_S;
+            break;
+
+            case dry:
+                signal[6] = OFF_DRY_S;
+            break;
+
+            case fan:
+                signal[6] = OFF_FAN_S;
+            break;
+
+            case heat:
+                signal[6] = OFF_HEAT_S;
+            break;
+
+            default:
+                signal[6] = OFF_AUTO_S;
+        }
     }
 
     signal[5] = ~signal[6];
@@ -103,34 +141,68 @@ void send_signal(struct signal_settings settings, uint8_t* signal)
     signal[8] = settings.temp - 17;
     signal[7] = ~signal[8];
 
-    switch(settings.strength){
-        case autostrength:
-            signal[10] = AUTO_FAN_S;
-        break;
-        
-        case quiet:
-            signal[10] = ONE_S;
-        break;
-        
-        case low:
-            signal[10] = TWO_S;
-        break;
-        
-        case med:
-            signal[10] = THREE_S;
-        break;
-        
-        case high:
-            signal[10] = FOUR_S;
-        break;
-        
-        default:
-            ESP_LOGI(TAG, "ERROR: Invalid fan speed value");
+    if (settings.status == economy)
+    {
+        signal[10] = ECONOMY_S;
+    }
+    else if (settings.status == powerful)
+    {
+        switch(settings.strength){
+            case autostrength:
+                signal[10] = POWERF_AUTO_S;
+            break;
+            
+            case quiet:
+                signal[10] = POWERF_ONE_S;
+            break;
+            
+            case low:
+                signal[10] = POWERF_TWO_S;
+            break;
+            
+            case med:
+                signal[10] = POWERF_THREE_S;
+            break;
+            
+            case high:
+                signal[10] = POWERF_FOUR_S;
+            break;
+            
+            default:
+                ESP_LOGI(TAG, "ERROR: Invalid fan speed value");
+        }
+    }
+    else
+    {
+        switch(settings.strength){
+            case autostrength:
+                signal[10] = FAN_AUTO_S;
+            break;
+            
+            case quiet:
+                signal[10] = FAN_ONE_S;
+            break;
+            
+            case low:
+                signal[10] = FAN_TWO_S;
+            break;
+            
+            case med:
+                signal[10] = FAN_THREE_S;
+            break;
+            
+            case high:
+                signal[10] = FAN_FOUR_S;
+            break;
+            
+            default:
+                ESP_LOGI(TAG, "ERROR: Invalid fan speed value");
+        }
     }
 
     signal[9] = ~signal[10];
 
-    //TODO: economy en powerful erbij
+    send_inverted(signal, 19);
 }
 
 void send_inverted(uint8_t* signal, size_t length)
@@ -161,7 +233,7 @@ void send_inverted(uint8_t* signal, size_t length)
 
     taskEXIT_CRITICAL(&test);
     
-    printf("! signal sent\n");
+    printf("! mitsubishi signal sent\n");
 }
 
 void ir_led(bool x, int t)

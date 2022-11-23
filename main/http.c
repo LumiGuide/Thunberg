@@ -16,7 +16,6 @@ static const char *TAG = "setup http";
 static const char *REST_TAG = "get html";
 #define SCRATCH_BUFSIZE (10240)
 
-// enum airco_t{software, hardware, design, canteen, ceo, conference, flexwork};
 // enum mode_t{automode, cool, dry, fan, heat};
 // enum strength_t{autostrength, high, med, low, quiet};
 // enum status_t{normal, powerful, economy, off};
@@ -29,64 +28,9 @@ struct signal_settings send_settings;
 // send_settings.strength = 0;
 // send_settings.status = 0;
 
-static esp_err_t get_settings_handler(httpd_req_t *req)
-{
-    httpd_resp_set_type(req, "application/json");
-    cJSON *root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "airco", send_settings.airco);
-    cJSON_AddNumberToObject(root, "temperature", send_settings.temp);
-    cJSON_AddNumberToObject(root, "mode", send_settings.mode);
-    cJSON_AddNumberToObject(root, "strength", send_settings.strength);
-    cJSON_AddNumberToObject(root, "status", send_settings.status);
-    const char *sys_info = cJSON_Print(root);
-    httpd_resp_sendstr(req, sys_info);
-    free((void *)sys_info);
-    cJSON_Delete(root);
-    ESP_LOGI(TAG, "JSON FILE SENT TO USER");
-    return ESP_OK;
-}
-    
-static esp_err_t get_index_handler(httpd_req_t *req)
-{
-    FILE *file = fopen("/spiffs/index.html", "r");
-    if(file == NULL)
-    {
-        ESP_LOGE(TAG,"File does not exist!");
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
-        return ESP_FAIL;
-    }
-
-    if (httpd_resp_set_type(req, "text/html") != ESP_OK)
-    {
-        ESP_LOGE(REST_TAG, "Failed to set type to text/html");
-    }
-
-    char *chunk = (char *)req->user_ctx;
-    size_t r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
-
-    while (r > 0)
-    {
-        //TODO: if return != ESP_OK dan error
-        if (httpd_resp_send_chunk(req, chunk, r) != ESP_OK)
-        {
-            fclose(file);
-            ESP_LOGE(REST_TAG, "File sending failed!");
-            /* Abort sending file */
-            httpd_resp_sendstr_chunk(req, NULL);
-            /* Respond with 500 Internal Server Error */
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
-            return ESP_FAIL;
-        }
-        r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
-    }
-
-    /* Close file after sending complete */
-    fclose(file);
-    ESP_LOGI(REST_TAG, "File sending complete");
-    /* Respond with an empty chunk to signal HTTP response completion */
-    httpd_resp_send_chunk(req, NULL, 0);
-    return ESP_OK;
-}
+bool to_enum_mode(char* input, enum mode_t* location);
+bool to_enum_status(char* input, enum status_t* location);
+bool to_enum_strength(char* input, enum strength_t* location);
 
 static esp_err_t post_settings_handler(httpd_req_t *req)
 {
@@ -106,27 +50,11 @@ static esp_err_t post_settings_handler(httpd_req_t *req)
     
     cJSON *json = cJSON_Parse(buf);
     if (json == NULL) {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Request contains malformed JSON");
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Request contains malformed JSON, can't parse");
         return ESP_FAIL;
     }
 
-
-    cJSON *aircoObj = cJSON_GetObjectItem(json, "airco");
-
-    if (!cJSON_IsString(aircoObj))
-    {
-        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Airco is not a string");
-        return ESP_FAIL;
-    }
-    
-    ESP_LOGI(TAG, "user input airco: %s", aircoObj->valuestring);
-
-    if (to_enum_airco(aircoObj->valuestring, &send_settings.airco) == false)
-    {
-        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "INVALID AIRCO INPUT, TRY AGAIN"); //TODO: foutmelding naar frontend
-        return ESP_FAIL;
-    }
-
+    ESP_LOGI(TAG, "JSON file parsed");
 
     cJSON *modeObj = cJSON_GetObjectItem(json, "mode");
 
@@ -235,7 +163,108 @@ static esp_err_t post_settings_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t get_settings_handler(httpd_req_t *req)
+{
+    //TODO: strings sturen ipv ints!
+    httpd_resp_set_type(req, "application/json");
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "temperature", send_settings.temp);
+    cJSON_AddNumberToObject(root, "mode", send_settings.mode);
+    cJSON_AddNumberToObject(root, "strength", send_settings.strength);
+    cJSON_AddNumberToObject(root, "status", send_settings.status);
+    const char *sys_info = cJSON_Print(root);
+    httpd_resp_sendstr(req, sys_info);
+    free((void *)sys_info);
+    cJSON_Delete(root);
+    ESP_LOGI(TAG, "JSON FILE SENT TO USER");
+    return ESP_OK;
+}
 
+#if CONFIG_AIRCO_HOST
+static esp_err_t get_index_handler(httpd_req_t *req)
+{
+    FILE *file = fopen("/spiffs/index.html", "r");
+    if(file == NULL)
+    {
+        ESP_LOGE(TAG,"File does not exist!");
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
+        return ESP_FAIL;
+    }
+
+    if (httpd_resp_set_type(req, "text/html") != ESP_OK)
+    {
+        ESP_LOGE(REST_TAG, "Failed to set type to text/html");
+    }
+
+    char *chunk = (char *)req->user_ctx;
+    size_t r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
+
+    while (r > 0)
+    {
+        //TODO: if return != ESP_OK dan error
+        if (httpd_resp_send_chunk(req, chunk, r) != ESP_OK)
+        {
+            fclose(file);
+            ESP_LOGE(REST_TAG, "File sending failed!");
+            /* Abort sending file */
+            httpd_resp_sendstr_chunk(req, NULL);
+            /* Respond with 500 Internal Server Error */
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+            return ESP_FAIL;
+        }
+        r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
+    }
+
+    /* Close file after sending complete */
+    fclose(file);
+    ESP_LOGI(REST_TAG, "File sending complete");
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+
+static esp_err_t get_favicon_handler(httpd_req_t *req)
+{
+    FILE *file = fopen("/spiffs/favicon.ico", "r");
+    if(file == NULL)
+    {
+        ESP_LOGE(TAG,"File does not exist!");
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
+        return ESP_FAIL;
+    }
+
+    if (httpd_resp_set_type(req, "image/x-icon") != ESP_OK)
+    {
+        ESP_LOGE(REST_TAG, "Failed to set type to image/x-icon");
+    }
+
+    char *chunk = (char *)req->user_ctx;
+    size_t r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
+
+    while (r > 0)
+    {
+        //TODO: if return != ESP_OK dan error
+        if (httpd_resp_send_chunk(req, chunk, r) != ESP_OK)
+        {
+            fclose(file);
+            ESP_LOGE(REST_TAG, "File sending failed!");
+            /* Abort sending file */
+            httpd_resp_sendstr_chunk(req, NULL);
+            /* Respond with 500 Internal Server Error */
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send icon");
+            return ESP_FAIL;
+        }
+        r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
+    }
+
+    /* Close file after sending complete */
+    fclose(file);
+    ESP_LOGI(REST_TAG, "Icon sending complete");
+    /* Respond with an empty chunk to signal HTTP response completion */
+    httpd_resp_send_chunk(req, NULL, 0);
+    return ESP_OK;
+}
+#endif
 
 /* This handler allows the custom error handling functionality to be
  * tested from client side. For that, when a PUT request 0 is sent to
@@ -250,15 +279,6 @@ static esp_err_t post_settings_handler(httpd_req_t *req)
  */
 esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
 {
-    if (strcmp("/hello", req->uri) == 0) {
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "/hello URI is not available");
-        /* Return ESP_OK to keep underlying socket open */
-        return ESP_OK;
-    } else if (strcmp("/echo", req->uri) == 0) {
-        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "/echo URI is not available");
-        /* Return ESP_FAIL to close underlying socket */
-        return ESP_FAIL;
-    }
     /* For any other URI send 404 and close socket */
     httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Some 404 error message");
     return ESP_FAIL;
@@ -268,6 +288,13 @@ httpd_handle_t start_webserver(struct circ_buf* buffer)
 {
     char* rest_context = (char *)malloc(sizeof(char) * SCRATCH_BUFSIZE);
 
+    const httpd_uri_t post_settings = {
+        .uri       = "/settings",
+        .method    = HTTP_POST,
+        .handler   = post_settings_handler,
+        .user_ctx  = buffer
+    };
+
     const httpd_uri_t get_settings = {
         .uri       = "/settings",
         .method    = HTTP_GET,
@@ -275,6 +302,7 @@ httpd_handle_t start_webserver(struct circ_buf* buffer)
         .user_ctx  = NULL
     };
 
+    #if CONFIG_AIRCO_HOST
     const httpd_uri_t get_index = {
         .uri       = "/",
         .method    = HTTP_GET,
@@ -282,12 +310,13 @@ httpd_handle_t start_webserver(struct circ_buf* buffer)
         .user_ctx  = rest_context
     };
 
-    const httpd_uri_t post_settings = {
-        .uri       = "/settings",
-        .method    = HTTP_POST,
-        .handler   = post_settings_handler,
-        .user_ctx  = buffer
+    const httpd_uri_t get_favicon = {
+        .uri       = "/favicon.ico",
+        .method    = HTTP_GET,
+        .handler   = get_favicon_handler,
+        .user_ctx  = rest_context
     };
+    #endif
 
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -300,7 +329,10 @@ httpd_handle_t start_webserver(struct circ_buf* buffer)
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &post_settings);
         httpd_register_uri_handler(server, &get_settings);
+        #if CONFIG_AIRCO_HOST
         httpd_register_uri_handler(server, &get_index);
+        httpd_register_uri_handler(server, &get_favicon);
+        #endif
         return server;
     }
 
@@ -308,6 +340,7 @@ httpd_handle_t start_webserver(struct circ_buf* buffer)
     return NULL;
 }
 
+#if CONFIG_AIRCO_HOST
 void spiff_config (void)
 {
     esp_vfs_spiffs_conf_t config = {
@@ -336,6 +369,7 @@ void spiff_config (void)
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
 }
+#endif
 
 void stop_webserver(httpd_handle_t server)
 {
@@ -359,44 +393,6 @@ void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, v
         ESP_LOGI(TAG, "Starting webserver");
         server_ctx->server = start_webserver(server_ctx->buffer);
     }
-}
-
-bool to_enum_airco(char* input, enum airco_t* out)
-{
-   if (strcmp(input, "software") == 0)
-    {
-        *out = software;
-    }
-    else if (strcmp(input, "hardware") == 0)
-    {
-        *out = hardware;
-    }
-    else if (strcmp(input, "design") == 0)
-    {
-        *out = design;
-    }
-    else if (strcmp(input, "canteen") == 0)
-    {
-        *out = canteen;
-    }
-    else if (strcmp(input, "ceo") == 0)
-    {
-        *out = ceo;
-    }
-    else if (strcmp(input, "conference") == 0)
-    {
-        *out = conference;
-    }
-    else if (strcmp(input, "flexwork") == 0)
-    {
-        *out = flexwork;
-    }
-    else
-    {
-        return false;
-    }
-
-    return true;
 }
 
 bool to_enum_mode(char* input, enum mode_t* location)
