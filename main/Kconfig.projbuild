@@ -15,19 +15,19 @@ menu "Thunberg Climate Control"
                 Mitsubishi brand
     endchoice
 
-    choice AIRCO_SERVER
-        prompt "Host server on this device"
+    choice AIRCO_WEBSITE
+        prompt "Host website on this device"
         default AIRCO_HOST
         help
-            Select 'host' if you want to host the server on this device.
+            Select 'host' if you want to host the website on this device.
         config AIRCO_HOST
-            bool "Yes, host server"
+            bool "Yes, host website"
             help
-                Host server on this device
+                Host website on this device
         config AIRCO_LISTEN
             bool "No, receive signals only"
             help
-                Don't host server on this device, receive signals only
+                Don't host website on this device, receive signals only
     endchoice
 
 endmenu

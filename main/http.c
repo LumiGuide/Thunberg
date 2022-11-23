@@ -31,6 +31,9 @@ struct signal_settings send_settings;
 bool to_enum_mode(char* input, enum mode_t* location);
 bool to_enum_status(char* input, enum status_t* location);
 bool to_enum_strength(char* input, enum strength_t* location);
+char* from_enum_mode(char* input, enum mode_t location);
+char* from_enum_status(char* input, enum status_t location);
+char* from_enum_strength(char* input, enum strength_t location);
 
 static esp_err_t post_settings_handler(httpd_req_t *req)
 {
@@ -169,9 +172,9 @@ static esp_err_t get_settings_handler(httpd_req_t *req)
     httpd_resp_set_type(req, "application/json");
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "temperature", send_settings.temp);
-    cJSON_AddNumberToObject(root, "mode", send_settings.mode);
-    cJSON_AddNumberToObject(root, "strength", send_settings.strength);
-    cJSON_AddNumberToObject(root, "status", send_settings.status);
+    cJSON_AddStringToObject(root, "mode", from_enum_mode(send_settings.mode));
+    cJSON_AddStringToObject(root, "strength", from_enum_strength(send_settings.strength));
+    cJSON_AddStringToObject(root, "status", from_enum_status(send_settings.status));
     const char *sys_info = cJSON_Print(root);
     httpd_resp_sendstr(req, sys_info);
     free((void *)sys_info);
@@ -477,4 +480,84 @@ bool to_enum_strength(char* input, enum strength_t* location)
     }
 
     return true;
+}
+
+char* from_enum_mode(char* input, enum mode_t location)
+{
+    if (location == automode)
+    {
+        return "auto";
+    }
+    else if (location == cool)
+    {
+        return "cool";
+    }
+    else if (location == dry)
+    {
+        return "dry";
+    }
+    else if (location == fan)
+    {
+        return "fan";
+    }
+    else if (location == heat)
+    {
+        return "heat";
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+
+char*  from_enum_status(char* input, enum status_t location)
+{
+    if (location == normal)
+    {
+        return "normal";
+    }
+    else if (location == powerful)
+    {
+        return "powerful";
+    }
+    else if (location == economy)
+    {
+        return "economy";
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+const char const *  from_enum_strength(enum strength_t location)
+{
+    if (location == autostrength)
+    {
+        static const char const * r = "auto";
+        return r;
+    }
+    else if (location == quiet)
+    {
+        return "quiet";
+    }
+    else if (location == low)
+    {
+        return "low";
+    }
+    else if (location == med)
+    {
+        return "med";
+    }
+    else if (location == high)
+    {
+        return "high";
+    }
+    else
+    {
+        return NULL;
+    }
+    //TODO: switch case maken
+    // google nog even: c ideomatic enum to string implementation
 }

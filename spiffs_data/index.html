@@ -29,83 +29,154 @@
     <script>
 	window.onload = function() {
 		const settingsAirco = document.getElementById("airco");
-        const tempInput = document.getElementById("temp-input");
+        const settingsTemp = document.getElementById("temp-input");
         const tempView = document.getElementById("temp-view");
         const settingsMode = document.getElementById("mode");
         const settingsStrength = document.getElementById("strength");
         const settingsStatus = document.getElementById("toppings");
         const sendBtn = document.getElementById("send-btn");
+        const sendTxt = document.getElementById("send-text");
+        const sendLd = document.getElementById("send-load");
         const offBtn = document.getElementById("off-btn");
+        const offTxt = document.getElementById("off-text");
+        const offLd = document.getElementById("off-load");
         const killallBtn = document.getElementById("kill-btn");
+        const killallTxt = document.getElementById("kill-text");
+        const killallLd = document.getElementById("kill-load");
         
+
+        /* Dit werkte
         function reqListener() {
   			console.log(this.responseText);
-            // hier settings impl.
+            settingsMode.value = "cool";
+            // hier JSON parse en settings implementeren
 		}
         
         const xhr = new XMLHttpRequest();
         xhr.addEventListener("load", reqListener);
 		xhr.open("GET", 'http://' + settingsAirco.value + '/settings', true);
 		xhr.send();
+        */
+
+        fetch('http://' + settingsAirco.value + '/settings', {
+                method: 'GET'
+            })
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .then(function(data) {
+                    const parsedJSON = data.json();
+                    console.dir(parsedJSON);
+                    //hier settings implementeren
+                });
         
-        tempInput.oninput = function(e) {
+        settingsTemp.oninput = function(e) {
         	tempView.textContent = e.target.value;
         };
         
         sendBtn.onclick = function() {
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            killallBtn.disabled = true;
+            sendTxt.hidden = true;
+            sendLd.hidden = false;
+
 			const myForm = {
-                temperature: tempInput.valueAsNumber,
+                temperature: settingsTemp.valueAsNumber,
                 mode: settingsMode.value,
                 strength: settingsStrength.value,
                 status: settingsStatus.value,
                 power: "on"
             };
+
             const myJSON = JSON.stringify(myForm);
-			const xhr = new XMLHttpRequest();
-			xhr.open("POST", 'http://' + settingsAirco.value + '/settings', true);
-			xhr.send(myJSON);
+
+            fetch('http://' + settingsAirco.value + '/settings', {
+                method: 'POST',
+                body: myJSON
+            })
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .finally(function(){
+                    sendLd.hidden = true;
+                    sendTxt.hidden = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    killallBtn.disabled = false;
+                });
         };
         
         offBtn.onclick = function() {
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            killallBtn.disabled = true;
+            offTxt.hidden = true;
+            offLd.hidden = false;
+
             const myForm = {
-                temperature: tempInput.valueAsNumber,
+                temperature: settingsTemp.valueAsNumber,
                 mode: settingsMode.value,
                 strength: settingsStrength.value,
                 status: settingsStatus.value,
                 power: "off"
             };
+
             const myJSON = JSON.stringify(myForm);
-			const xhr = new XMLHttpRequest();
-			xhr.open("POST", 'http://' + settingsAirco.value + '/settings', true);
-			xhr.send(myJSON);
+            
+            fetch('http://' + settingsAirco.value + '/settings', {
+                method: 'POST',
+                body: myJSON
+            })
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .finally(function(){
+                    offLd.hidden = true;
+                    offTxt.hidden = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    killallBtn.disabled = false;
+                });
+
         };
         
         killallBtn.onclick = function() {
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            killallBtn.disabled = true;
+            killallTxt.hidden = true;
+            killallLd.hidden = false;
+
             const myForm = {
-                temperature: tempInput.valueAsNumber,
+                temperature: settingsTemp.valueAsNumber,
                 mode: settingsMode.value,
                 strength: settingsStrength.value,
                 status: settingsStatus.value,
                 power: "off"
             };
             const myJSON = JSON.stringify(myForm);
-			const xhr = new XMLHttpRequest();
-			xhr.open("POST", 'http://10.0.24.21/settings', true);
-			xhr.send(myJSON);
-            xhr.open("POST", 'http://10.0.24.22/settings', true);
-			xhr.send(myJSON);
-            //xhr.open("POST", 'http://10.0.24.23/settings', true);
-			//xhr.send(myJSON);
-            //xhr.open("POST", 'http://10.0.24.24/settings', true);
-			//xhr.send(myJSON);
-            //xhr.open("POST", 'http://10.0.24.25/settings', true);
-			//xhr.send(myJSON);
-            //xhr.open("POST", 'http://10.0.24.26/settings', true);
-			//xhr.send(myJSON);
-            //xhr.open("POST", 'http://10.0.24.27/settings', true);
-			//xhr.send(myJSON);
+            
+            function myPromise(ip){
+                return fetch('http://10.0.24.' + ip + '/settings', {
+                    method: 'POST',
+                    body: myJSON
+                });
+            }
+
+            Promise.allSettled([myPromise(21), myPromise(22), myPromise(23), myPromise(24), myPromise(25), myPromise(26), myPromise(27)])
+                .catch(function(error) {
+                    console.dir(error);
+                })
+                .finally(function(){
+                    killallLd.hidden = true;
+                    killallTxt.hidden = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    killallBtn.disabled = false;
+                });
         };
-	};
+	};  
 
 	</script>
 </head>
@@ -162,7 +233,13 @@
     <option value="economy">Economy</option>
   </select>
   <br><br>
-  <button type="button" class="btn btn-light small" id="send-btn" value="send">Send</button> <button type="button" class="btn btn-danger small" id="off-btn" value="off">Turn Off</button>
+  <button type="button" class="btn btn-light small" id="send-btn" value="send">
+    <span id="send-text">Send</span>
+    <span hidden class="spinner-border spinner-border-sm" id="send-load"></span></button>
+  <p> </p>
+  <button type="button" class="btn btn-danger small" id="off-btn" value="off">
+    <span id="off-text">Turn Off</span>
+<span hidden class="spinner-border spinner-border-sm" id="off-load"></span></button>
 </form>
 
 <hr class="white">
@@ -170,14 +247,16 @@
 <br>
  
 <p>Turn off all aircos and make Thunberg happy.</p>
-<button type="button" class="btn btn-danger wide" id="kill-btn">KILL ALL</button>
+<button type="button" class="btn btn-danger wide" id="kill-btn">
+<span id="kill-text">KILL ALL</span>
+<span hidden class="spinner-border spinner-border-sm" id="kill-load"></span>
+</button>
 <br><br><br>
 <p>- Response lezen ander IP adres</p>
 <p>- GET request van ander IP adres accepteren</p>
 <p>   https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin</p>
-<p>- GET op onLoad, dan op verandering van airco. Settings weergeven</p>
-<p>- Kill All naar alle IP adressen: javascript promises explained tutorial</p>
-<p>- spinner of input disable tot pagina geladen</p>
+<p>- GET op onLoad, en op verandering van airco. Settings weergeven</p>
+<p>- spinner en input disable tot pagina geladen</p>
 </center>
 </body>
 </html>
