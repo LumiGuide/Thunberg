@@ -30,4 +30,10 @@ menu "Thunberg Climate Control"
                 Don't host website on this device, receive signals only
     endchoice
 
+    config SNTP_TIME_SERVER
+        string "SNTP server name"
+        default "pool.ntp.org"
+        help
+            Hostname of the main SNTP server.
+            
 endmenu

@@ -101,6 +101,7 @@ void IR_sender(void* rowan)
                 send_signal(settings, signal);
             }
             //TODO: else voor undef behaviour?
+        usleep(500000);
         }
 	}
 }

@@ -99,7 +99,6 @@ esp_err_t wifi_sta_do_connect(wifi_config_t wifi_config)
         ESP_LOGE(TAG, "WiFi connect failed! ret:%x", ret);
         return ret;
     }
-    
     return ESP_OK;
 }
 

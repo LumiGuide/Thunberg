@@ -76,6 +76,7 @@ void IR_sender(void* rowan)
         printf("status: %i\n", settings.status);
         printf("turnoff: %d\n", settings.turnoff);
         send_signal(settings, signal);
+        usleep(500000);
 	}
 }
 
@@ -207,9 +208,9 @@ void send_signal(struct signal_settings settings, uint8_t* signal)
 
 void send_inverted(uint8_t* signal, size_t length)
 {
-    portMUX_TYPE test = portMUX_INITIALIZER_UNLOCKED;
+    portMUX_TYPE criticalzone = portMUX_INITIALIZER_UNLOCKED;
 
-    taskENTER_CRITICAL(&test);
+    taskENTER_CRITICAL(&criticalzone);
 
     // SEND STARTSIGNAL
     ir_led(true, START_A);
@@ -231,7 +232,7 @@ void send_inverted(uint8_t* signal, size_t length)
     ir_led(true, ANNOUNCE);
     ir_led(false, 0);
 
-    taskEXIT_CRITICAL(&test);
+    taskEXIT_CRITICAL(&criticalzone);
     
     printf("! mitsubishi signal sent\n");
 }

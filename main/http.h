@@ -5,8 +5,12 @@
 #include <esp_http_server.h>
 
 enum mode_t{automode, cool, dry, fan, heat};
-enum status_t{normal, powerful, economy, off};
+enum status_t{normal, powerful, economy};
 enum strength_t{autostrength, high, med, low, quiet};
+
+static const char *from_enum_mode[] = {"auto", "cool", "dry", "fan", "heat"};
+static const char *from_enum_status[] = {"normal", "powerful", "economy"};
+static const char *from_enum_strength[] = {"auto", "high", "med", "low", "quiet"};
 
 struct signal_settings {
     uint8_t temp; //18-30 (16-30 bij HEAT)
@@ -14,11 +18,26 @@ struct signal_settings {
     enum strength_t strength; //AUTO/HIGH/MED/LOW/QUIET
     enum status_t status; //NORMAL/POWERFUL/ECONOMY/OFF
     bool turnoff;
+    struct tm time;
+    struct tm sync;
 };
 
-struct server_ctx_t{
+struct usercontext {
+        struct circ_buf* buffer;
+        pthread_mutex_t lock;
+        struct signal_settings send_settings;
+        time_t powerful_time;
+};
+
+struct server_t {
+    struct circ_buf* buffer;
+    char* rest_context;
+    struct usercontext* sendthis_context;
+};
+
+struct server_ctx_t {
 	httpd_handle_t server;
-	struct circ_buf* buffer;
+	struct server_t webserver;
 };
 
 void spiff_config (void);

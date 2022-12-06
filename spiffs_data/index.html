@@ -43,33 +43,57 @@
         const killallBtn = document.getElementById("kill-btn");
         const killallTxt = document.getElementById("kill-text");
         const killallLd = document.getElementById("kill-load");
-        
+        const timeView = document.getElementById("time-view");
+        const syncView = document.getElementById("sync-view");
 
-        /* Dit werkte
-        function reqListener() {
-  			console.log(this.responseText);
-            settingsMode.value = "cool";
-            // hier JSON parse en settings implementeren
-		}
-        
-        const xhr = new XMLHttpRequest();
-        xhr.addEventListener("load", reqListener);
-		xhr.open("GET", 'http://' + settingsAirco.value + '/settings', true);
-		xhr.send();
-        */
-
-        fetch('http://' + settingsAirco.value + '/settings', {
+        function getsettings(settingsAirco){
+            settingsTemp.disabled = true;
+            settingsMode.disabled = true;
+            settingsStrength.disabled = true;
+            settingsStatus.disabled = true;
+            sendBtn.disabled = true;
+            offBtn.disabled = true;
+            sendTxt.hidden = true;
+            sendLd.hidden = false;
+            offTxt.hidden = true;
+            offLd.hidden = false;
+            fetch('http://' + settingsAirco.value + '/settings', {
                 method: 'GET'
             })
                 .catch(function(error) {
                     console.dir(error);
                 })
+                .then((response) => response.json())
                 .then(function(data) {
-                    const parsedJSON = data.json();
-                    console.dir(parsedJSON);
-                    //hier settings implementeren
+                    const parsedObj = data;
+                    settingsTemp.valueAsNumber = parsedObj.temperature;
+                    tempView.textContent = parsedObj.temperature;
+                    settingsMode.value = parsedObj.mode;
+                    settingsStrength.value = parsedObj.strength;
+                    settingsStatus.value = parsedObj.status;
+                    timeView.textContent = parsedObj.time;
+                    syncView.textContent = parsedObj.sync;
+                })
+                .then(function() {
+                    settingsTemp.disabled = false;
+                    settingsMode.disabled = false;
+                    settingsStrength.disabled = false;
+                    settingsStatus.disabled = false;
+                    sendBtn.disabled = false;
+                    offBtn.disabled = false;
+                    sendTxt.hidden = false;
+                    sendLd.hidden = true;
+                    offTxt.hidden = false;
+                    offLd.hidden = true;
                 });
+            };
         
+        getsettings(settingsAirco);
+
+        settingsAirco.onchange = function(settingsAirco){
+            getsettings(settingsAirco.target);
+        };
+
         settingsTemp.oninput = function(e) {
         	tempView.textContent = e.target.value;
         };
@@ -202,8 +226,8 @@
   	</select>
   	<br><br>
     
-  	<label>Temperature: <span id="temp-view">20</span></label>
-	<input type="range" class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" min="20" max="30" step="1" value="20" id="temp-input">
+  	<label>Temperature: <span id="temp-view">loading..</span></label>
+	<input type="range" class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" min="20" max="30" step="1" id="temp-input">
   	<br>
     
   <p>Mode:</p>
@@ -233,14 +257,15 @@
     <option value="economy">Economy</option>
   </select>
   <br><br>
-  <button type="button" class="btn btn-light small" id="send-btn" value="send">
+  <button type="button" class="btn btn-light small" style='margin-right:5px' id="send-btn" value="send">
     <span id="send-text">Send</span>
     <span hidden class="spinner-border spinner-border-sm" id="send-load"></span></button>
-  <p> </p>
   <button type="button" class="btn btn-danger small" id="off-btn" value="off">
     <span id="off-text">Turn Off</span>
 <span hidden class="spinner-border spinner-border-sm" id="off-load"></span></button>
 </form>
+
+<br>
 
 <hr class="white">
 
@@ -251,12 +276,15 @@
 <span id="kill-text">KILL ALL</span>
 <span hidden class="spinner-border spinner-border-sm" id="kill-load"></span>
 </button>
-<br><br><br>
-<p>- Response lezen ander IP adres</p>
-<p>- GET request van ander IP adres accepteren</p>
-<p>   https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin</p>
-<p>- GET op onLoad, en op verandering van airco. Settings weergeven</p>
-<p>- spinner en input disable tot pagina geladen</p>
+
+<br><br>
+
+<hr class="white">
+
+<br>
+<p>Date & time of GET request: <span id="time-view">loading..</span></p>
+<p>Last NTP synchronisation: <span id="sync-view">loading..</span></p>
+
 </center>
 </body>
 </html>
