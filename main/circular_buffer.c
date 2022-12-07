@@ -77,7 +77,6 @@ int buffer_pop(struct circ_buf* youneedthis, void* output)
     }
     else
     {
-        printf("Buffer is empty\n");
         ret = -1;
     }
 

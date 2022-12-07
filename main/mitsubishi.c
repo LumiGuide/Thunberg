@@ -6,9 +6,9 @@
 
 
 const int ANNOUNCE = 375;
-const int ZERO = 395;
+const int ZERO = 400;
 const int ONE = 1190;
-const int START_A = 3160;
+const int START_A = 3180;
 const int START_B = 1580;
 
 const uint8_t AUTO_MODE_S = 0b00001000;
@@ -70,11 +70,6 @@ void IR_sender(void* rowan)
             continue;
         }
 
-        printf("temp: %i\n", settings.temp);
-        printf("mode: %i\n", settings.mode);
-        printf("strength: %i\n", settings.strength);
-        printf("status: %i\n", settings.status);
-        printf("turnoff: %d\n", settings.turnoff);
         send_signal(settings, signal);
         usleep(500000);
 	}
@@ -233,8 +228,6 @@ void send_inverted(uint8_t* signal, size_t length)
     ir_led(false, 0);
 
     taskEXIT_CRITICAL(&criticalzone);
-    
-    printf("! mitsubishi signal sent\n");
 }
 
 void ir_led(bool x, int t)

@@ -146,6 +146,18 @@ static esp_err_t post_settings_handler(httpd_req_t *req)
         settings_local.turnoff = true;
     }
 
+    #if CONFIG_AIRCO_MITSUBISHI
+    if (settings_local.mode == fan)
+    {
+        settings_local.status = normal;
+    }
+
+    if (settings_local.mode == dry && settings_local.status == powerful)
+    {
+        settings_local.status = normal;
+    }
+    #endif
+
     pthread_mutex_lock(&((struct usercontext *)req->user_ctx)->lock);
     ((struct usercontext *)req->user_ctx)->send_settings = settings_local;
     buffer_push((struct circ_buf*) ((struct usercontext *)req->user_ctx)->buffer, &((struct usercontext *)req->user_ctx)->send_settings);
