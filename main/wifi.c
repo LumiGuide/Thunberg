@@ -11,7 +11,6 @@ static const char *IR_NETIF_DESC_STA = "IR_netif_sta";
 #define IR_CONFIG_WIFI_PASSWORD "moonlight eastern spoon accord"
 static const wifi_scan_method_t IR_WIFI_SCAN_METHOD = WIFI_ALL_CHANNEL_SCAN;
 static const wifi_sort_method_t IR_WIFI_CONNECT_AP_SORT_METHOD = WIFI_CONNECT_AP_BY_SIGNAL;
-// unused because we use wifi scan method 'WIFI_ALL_CHANNEL_SCAN'
 static const int8_t IR_CONFIG_WIFI_SCAN_RSSI_THRESHOLD = -127;
 static const wifi_auth_mode_t IR_WIFI_SCAN_AUTH_MODE_THRESHOLD = WIFI_AUTH_MAX;
 static const int IR_CONFIG_WIFI_CONN_MAX_RETRY = 6;
@@ -27,7 +26,6 @@ void wifi_start(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
-    // Warning: the interface desc is used in tests to capture actual connection details (IP, gw, mask)
     esp_netif_config.if_desc = IR_NETIF_DESC_STA;
     esp_netif_config.route_prio = 128;
     sta_netif = esp_netif_create_wifi(WIFI_IF_STA, &esp_netif_config);
@@ -43,7 +41,6 @@ static void handler_on_wifi_disconnect(void *arg, esp_event_base_t event_base, i
     s_retry_num++;
     if (s_retry_num > IR_CONFIG_WIFI_CONN_MAX_RETRY) {
         ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.", s_retry_num);
-        /* let wifi_sta_do_connect() return */
         return;
     }
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
@@ -54,11 +51,9 @@ static void handler_on_wifi_disconnect(void *arg, esp_event_base_t event_base, i
     ESP_ERROR_CHECK(err);
 }
 
-/**
- * @brief Checks the netif description if it contains specified prefix.
- * All netifs created withing common connect component are prefixed with the module TAG,
- * so it returns true if the specified netif is owned by this module
- */
+/* Checks the netif description if it contains specified prefix.
+ * All netifs created within common connect component are prefixed with the module TAG,
+ * so it returns true if the specified netif is owned by this module */
 bool is_our_netif(const char *prefix, esp_netif_t *netif)
 {
     return strncmp(prefix, esp_netif_get_desc(netif), strlen(prefix) - 1) == 0;

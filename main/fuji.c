@@ -80,7 +80,7 @@ void IR_sender(void* rowan)
                 settings.status = economy;
                 send_signal(settings, signal);
             }
-            else // dus (repeat == normal)
+            else // so (repeat == normal)
             {
                 //homing sequence
                 usleep(500000);
@@ -92,7 +92,7 @@ void IR_sender(void* rowan)
                 send_signal(settings, signal);
 
                 usleep(500000);
-                send_inverted(signal, 7); //nog een keer economy zenden om uit te zetten
+                send_inverted(signal, 7); //2nd time economy signal to turn it off
             }
         usleep(500000);
         }
@@ -237,6 +237,8 @@ void send_inverted(uint8_t* signal, size_t length)
     ir_led(false, 0);
 
     taskEXIT_CRITICAL(&criticalzone);
+
+    ESP_LOGI(TAG, "Fuji signal sent");
 }
 
 void ir_led(bool x, int t)
@@ -255,7 +257,7 @@ void ledc_init(void)
         .speed_mode       = LEDC_MODE,
         .timer_num        = LEDC_TIMER,
         .duty_resolution  = LEDC_DUTY_RES,
-        .freq_hz          = LEDC_FREQUENCY,  // Set output frequency at 38 kHz
+        .freq_hz          = LEDC_FREQUENCY,
         .clk_cfg          = LEDC_AUTO_CLK
     };
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
@@ -267,7 +269,7 @@ void ledc_init(void)
         .timer_sel      = LEDC_TIMER,
         .intr_type      = LEDC_INTR_DISABLE,
         .gpio_num       = LEDC_OUTPUT_IO,
-        .duty           = LEDC_DUTY50, // Set duty to 50%
+        .duty           = LEDC_DUTY50,
         .hpoint         = 0
     };
     ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));

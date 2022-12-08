@@ -77,7 +77,6 @@ static void initialize_sntp(void)
         if (sntp_getservername(i)){
             ESP_LOGI(TAG, "server %d: %s", i, sntp_getservername(i));
         } else {
-            // we have either IPv4 or IPv6 address, let's print it
             char buff[INET6_ADDRSTRLEN];
             ip_addr_t const *ip = sntp_getserver(i);
             if (ipaddr_ntoa_r(ip, buff, INET6_ADDRSTRLEN) != NULL)

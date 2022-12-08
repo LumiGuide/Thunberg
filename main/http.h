@@ -13,7 +13,7 @@ static const char *from_enum_status[] = {"normal", "powerful", "economy"};
 static const char *from_enum_strength[] = {"auto", "high", "med", "low", "quiet"};
 
 struct signal_settings {
-    uint8_t temp; //18-30 (16-30 bij HEAT)
+    uint8_t temp; //18-30
     enum mode_t mode; //AUTO/COOL/DRY/FAN/HEAT
     enum strength_t strength; //AUTO/HIGH/MED/LOW/QUIET
     enum status_t status; //NORMAL/POWERFUL/ECONOMY/OFF
