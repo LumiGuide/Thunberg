@@ -23,7 +23,7 @@
 #include "http.h"
 #include "ir_sender.h"
 #include "sntp.h"
-
+#include "addressable_led.h"
 
 #define TAG "spiffs"
 
@@ -31,6 +31,7 @@ static TaskHandle_t handle_sender = NULL;
 
 void app_main(void)
 {
+	set_led(0,0,0);
 	esp_timer_early_init();
 
 	//SERVER OPZETTEN

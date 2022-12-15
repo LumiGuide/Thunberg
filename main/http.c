@@ -13,6 +13,8 @@
 #include "cJSON.h"
 #include "sntp.h"
 #include "esp_spiffs.h"
+#include "addressable_led.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "setup http";
 static const char *REST_TAG = "get html";
@@ -441,6 +443,8 @@ void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id
         stop_webserver(server_ctx);
         server_ctx->server = NULL;
     }
+
+    set_led(0, 0, 0);
 }
 
 void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -450,6 +454,7 @@ void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, v
         ESP_LOGI(TAG, "Starting webserver");
         server_ctx->server = start_webserver(server_ctx->webserver);
     }
+    set_led(0, 25, 0);
 }
 
 bool to_enum_mode(char* input, enum mode_t* location)
