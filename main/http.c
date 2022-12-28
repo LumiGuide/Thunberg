@@ -169,6 +169,7 @@ static esp_err_t post_settings_handler(httpd_req_t *req)
 
     ESP_LOGI(TAG, "JSON FILE RECEIVED FROM USER");
 
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "http://10.0.24.21");
     httpd_resp_send_chunk(req, NULL, 0);
     return ESP_OK;
 }
@@ -250,6 +251,8 @@ static esp_err_t get_index_handler(httpd_req_t *req)
         ESP_LOGE(REST_TAG, "Failed to set type to text/html");
     }
 
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "http://10.0.24.21");
+
     char *chunk = (char *)req->user_ctx;
     size_t r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
 
@@ -290,6 +293,8 @@ static esp_err_t get_favicon_handler(httpd_req_t *req)
     {
         ESP_LOGE(REST_TAG, "Failed to set type to image/x-icon");
     }
+
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "http://10.0.24.21");
 
     char *chunk = (char *)req->user_ctx;
     size_t r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
