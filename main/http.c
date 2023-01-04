@@ -169,7 +169,7 @@ static esp_err_t post_settings_handler(httpd_req_t *req)
 
     ESP_LOGI(TAG, "JSON FILE RECEIVED FROM USER");
 
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "http://10.0.24.21");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
     httpd_resp_send_chunk(req, NULL, 0);
     return ESP_OK;
 }
@@ -182,7 +182,7 @@ static esp_err_t get_settings_handler(httpd_req_t *req)
     pthread_mutex_unlock(&((struct usercontext *)req->user_ctx)->lock);
 
     httpd_resp_set_type(req, "application/json");
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "http://10.0.24.21");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
     cJSON *root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "temperature", settings_local.temp);
     cJSON_AddStringToObject(root, "mode", from_enum_mode[settings_local.mode]);
@@ -251,7 +251,7 @@ static esp_err_t get_index_handler(httpd_req_t *req)
         ESP_LOGE(REST_TAG, "Failed to set type to text/html");
     }
 
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "http://10.0.24.21");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
     char *chunk = (char *)req->user_ctx;
     size_t r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);
@@ -294,7 +294,7 @@ static esp_err_t get_favicon_handler(httpd_req_t *req)
         ESP_LOGE(REST_TAG, "Failed to set type to image/x-icon");
     }
 
-    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "http://10.0.24.21");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
     char *chunk = (char *)req->user_ctx;
     size_t r = fread(chunk, sizeof(char), SCRATCH_BUFSIZE, file);

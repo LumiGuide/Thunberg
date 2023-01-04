@@ -88,7 +88,12 @@
                 });
             };
         
-        getsettings(settingsAirco);
+        settingsTemp.disabled = true;
+        settingsMode.disabled = true;
+        settingsStrength.disabled = true;
+        settingsStatus.disabled = true;
+        sendBtn.disabled = true;
+        offBtn.disabled = true;
 
         settingsAirco.onchange = function(settingsAirco){
             getsettings(settingsAirco.target);
@@ -214,9 +219,10 @@
 <br>
 <br>
 <form id="settingsForm" method="post">
-  <p>Airco:</p>
+  <p>Room:</p>
   <select class="dropdown-menu dropdown-menu-dark position-static d-grid gap-1 p-1 rounded-1 mx-0 border-0" id="airco">
-    <option selected value="10.0.24.21">Hardware</option>
+    <option value="empty" disabled selected>Select the room</option>
+    <option value="10.0.24.21">Hardware</option>
     <option value="10.0.24.22">Software</option>
     <option value="10.0.24.23">Design</option>
     <option value="10.0.24.24">Canteen</option>
