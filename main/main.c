@@ -24,6 +24,7 @@
 #include "ir_sender.h"
 #include "sntp.h"
 #include "addressable_led.h"
+#include "ota.h"
 
 #define TAG "spiffs"
 

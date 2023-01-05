@@ -8,6 +8,8 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <esp_https_ota.h>
+#include <esp_ota_ops.h>
 #include "esp_vfs.h"
 #include "esp_vfs.h"
 #include "cJSON.h"
@@ -15,10 +17,13 @@
 #include "esp_spiffs.h"
 #include "addressable_led.h"
 #include "driver/gpio.h"
+#include "ota.h"
 
 static const char *TAG = "setup http";
 static const char *REST_TAG = "get html";
 #define SCRATCH_BUFSIZE (10240)
+
+static char ota_url_buf[OTA_URL_SIZE];
 
 static TaskHandle_t handle_realtime = NULL;
 
@@ -235,6 +240,121 @@ static esp_err_t get_settings_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t ota_post_handler(httpd_req_t *req) {
+  if (ota_status != OTA_STATUS_INACTIVE && ota_status != OTA_STATUS_FAILED)
+  {
+    httpd_resp_send_err(req, HTTPD_405_METHOD_NOT_ALLOWED, "OTA in progress");
+    return ESP_FAIL;
+  }
+
+  int total_len = req->content_len;
+  int cur_len = 0;
+  int received = 0;
+  if (total_len >= OTA_URL_SIZE)
+  {
+    /* Respond with 400 Bad Request */
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Firmware URL too long");
+    return ESP_FAIL;
+  }
+  while (cur_len < total_len)
+  {
+    received = httpd_req_recv(req, ota_url_buf + cur_len, total_len);
+    if (received <= 0)
+    {
+      /* Respond with 500 Internal Server Error */
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to receive firmware URL");
+      return ESP_FAIL;
+    }
+    cur_len += received;
+  }
+  ota_url_buf[total_len] = '\0';
+
+  httpd_resp_sendstr(req, "ota starting\n");
+
+  ota_status = OTA_STATUS_CONNECTING;
+  ota_size = 0;
+
+  BaseType_t ret = xTaskCreate(&ota_task, "ota_task", 8192, (void *)ota_url_buf, configMAX_PRIORITIES - 2, NULL);
+  if (ret != pdPASS)
+  {
+      ota_status = OTA_STATUS_FAILED;
+      ota_error = OTA_ERR_CREATE_TASK_FAILED;
+      ESP_LOGE(TAG, "Error starting OTA task: %d", ota_error);
+
+      /* Respond with 500 Internal Server Error */
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Error starting OTA task");
+      return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
+static esp_err_t ota_commit_post_handler(httpd_req_t *req)
+{
+  const esp_partition_t *running = esp_ota_get_running_partition();
+  esp_ota_img_states_t ota_state;
+  if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK)
+  {
+    if (ota_state == ESP_OTA_IMG_PENDING_VERIFY)
+    {
+      ESP_LOGI(TAG, "OTA commit requested");
+      esp_ota_mark_app_valid_cancel_rollback();
+      ESP_LOGI(TAG, "OTA commit complete!");
+      httpd_resp_sendstr(req, "commit!\n");
+      ota_status = OTA_STATUS_INACTIVE;
+      return ESP_OK;
+    }
+    else
+    {
+      httpd_resp_sendstr(req, "nothing to commit!\n");
+    }
+  }
+  else
+  {
+    httpd_resp_sendstr(req, "not running ota\n");
+  }
+  return ESP_OK;
+}
+
+static esp_err_t ota_rollback_post_handler(httpd_req_t *req)
+{
+  const esp_partition_t *running = esp_ota_get_running_partition();
+  esp_ota_img_states_t ota_state;
+  if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK)
+  {
+    if (ota_state == ESP_OTA_IMG_PENDING_VERIFY)
+    {
+      ESP_LOGE(TAG, "Rolling back OTA");
+      httpd_resp_sendstr(req, "rollback!\n");
+      // TODO: deinit
+      esp_ota_mark_app_invalid_rollback_and_reboot();
+    }
+    else
+    {
+      httpd_resp_sendstr(req, "nothing to rollback!\n");
+    }
+  }
+  else
+  {
+    httpd_resp_sendstr(req, "not running ota\n");
+  }
+  return ESP_OK;
+}
+
+static esp_err_t ota_status_get_handler(httpd_req_t *req)
+{
+  httpd_resp_set_type(req, "application/json");
+  cJSON *root = cJSON_CreateObject();
+
+  lumicam_ota_status(root);
+  
+  const char *resp = cJSON_PrintUnformatted(root);
+  httpd_resp_sendstr(req, resp);
+  free((void *)resp);
+  cJSON_Delete(root);
+
+  return ESP_OK;
+}
+
 #if CONFIG_AIRCO_HOST
 static esp_err_t get_index_handler(httpd_req_t *req)
 {
@@ -357,6 +477,30 @@ httpd_handle_t start_webserver(struct server_t arg)
         .user_ctx  = webserver.sendthis_context
     };
 
+    const httpd_uri_t ota_post = {
+        .uri = "/ota/new",
+        .method = HTTP_POST,
+        .handler = ota_post_handler
+    };
+
+    const httpd_uri_t ota_commit_post = {
+        .uri = "/ota/commit",
+        .method = HTTP_POST,
+        .handler = ota_commit_post_handler
+    };
+
+    const httpd_uri_t ota_rollback_post = {
+        .uri = "/ota/rollback",
+        .method = HTTP_POST,
+        .handler = ota_rollback_post_handler
+    };
+
+    const httpd_uri_t ota_status_get = {
+        .uri = "/ota/status",
+        .method = HTTP_GET,
+        .handler = ota_status_get_handler
+    };
+
     #if CONFIG_AIRCO_HOST
     const httpd_uri_t get_index = {
         .uri       = "/",
@@ -384,6 +528,10 @@ httpd_handle_t start_webserver(struct server_t arg)
         ESP_LOGI(TAG, "Registering URI handlers");
         httpd_register_uri_handler(server, &post_settings);
         httpd_register_uri_handler(server, &get_settings);
+        httpd_register_uri_handler(server, &ota_post);
+        httpd_register_uri_handler(server, &ota_commit_post);
+        httpd_register_uri_handler(server, &ota_rollback_post);
+        httpd_register_uri_handler(server, &ota_status_get);
         #if CONFIG_AIRCO_HOST
         httpd_register_uri_handler(server, &get_index);
         httpd_register_uri_handler(server, &get_favicon);
