@@ -12,15 +12,15 @@ static const wifi_scan_method_t IR_WIFI_SCAN_METHOD = WIFI_ALL_CHANNEL_SCAN;
 static const wifi_sort_method_t IR_WIFI_CONNECT_AP_SORT_METHOD = WIFI_CONNECT_AP_BY_SIGNAL;
 static const int8_t IR_CONFIG_WIFI_SCAN_RSSI_THRESHOLD = -127;
 static const wifi_auth_mode_t IR_WIFI_SCAN_AUTH_MODE_THRESHOLD = WIFI_AUTH_MAX;
-static const int IR_CONFIG_WIFI_CONN_MAX_RETRY = 6;
 
 static const char *TAG = "connecting wifi";
 
 esp_netif_t *sta_netif = NULL;
-int s_retry_num = 0;
 
 void wifi_start(void)
 {
+    // TODO: als wifi al gestart is: stop, dan pas verder
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
@@ -37,16 +37,24 @@ void wifi_start(void)
 
 void handler_on_wifi_disconnect(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-    s_retry_num++;
-    if (s_retry_num > IR_CONFIG_WIFI_CONN_MAX_RETRY) {
-        ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.", s_retry_num);
-        return;
-    }
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
+    size_t retry_count = 0;
     esp_err_t err = esp_wifi_connect();
-    if (err == ESP_ERR_WIFI_NOT_STARTED) {
-        return;
+    if (err == ESP_ERR_WIFI_NOT_STARTED)
+    {
+        wifi_shutdown();
     }
+
+    while (err != ESP_OK)
+    {
+        retry_count ++;
+        if(retry_count == 50)
+        {
+            set_led(255,128,0);
+        }
+        err = esp_wifi_connect();
+    }
+
     ESP_ERROR_CHECK(err);
 }
 
@@ -71,7 +79,6 @@ esp_netif_t *get_example_netif_from_desc(const char *desc)
 
 void handler_on_sta_got_ip(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
-    s_retry_num = 0;
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     if (!is_our_netif(IR_NETIF_DESC_STA, event->esp_netif)) {
         return;
@@ -82,18 +89,24 @@ void handler_on_sta_got_ip(void *arg, esp_event_base_t event_base, int32_t event
 
 esp_err_t wifi_sta_do_connect(wifi_config_t wifi_config)
 {
-    s_retry_num = 0;
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &handler_on_wifi_disconnect, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &handler_on_sta_got_ip, NULL));
 
     ESP_LOGI(TAG, "Connecting to %s...", wifi_config.sta.ssid);
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    esp_err_t ret = esp_wifi_connect();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "WiFi connect failed! ret:%x", ret);
-        return ret;
-    }
-    return ESP_OK;
+    esp_err_t ret;
+    size_t retry_count = 0;
+    do
+    {
+        ret = esp_wifi_connect();
+        retry_count ++;
+        if (retry_count == 50)
+        {
+            set_led(255,128,0);
+        }
+    } while (ret != ESP_OK);
+
+    return ret;
 }
 
 esp_err_t wifi_connect(void)
@@ -160,7 +173,8 @@ void print_all_netif_ips(const char *prefix)
 
 esp_err_t wifi_start_connect(void)
 {
-    if (wifi_connect() != ESP_OK) {
+    if (wifi_connect() != ESP_OK)
+    {
         return ESP_FAIL;
     }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&wifi_shutdown));
