@@ -41,7 +41,7 @@ void set_led(uint8_t red, uint8_t green, uint8_t blue)
     uint8_t copy_colour = green;
     for (int i = 0; i < (AMOUNT_OF_BYTES * 8); i++)
     {
-        colour[i] = copy_colour & 1000000 ? (input_t){6, 6} : (input_t){3, 9};
+        colour[i] = copy_colour & 10000000 ? (input_t){6, 6} : (input_t){3, 9};
         copy_colour <<= 1;
         if(i == 8)
         {

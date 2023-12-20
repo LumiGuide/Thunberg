@@ -19,8 +19,6 @@ esp_netif_t *sta_netif = NULL;
 
 void wifi_start(void)
 {
-    // TODO: als wifi al gestart is: stop, dan pas verder
-
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
@@ -50,7 +48,7 @@ void handler_on_wifi_disconnect(void *arg, esp_event_base_t event_base, int32_t 
         retry_count ++;
         if(retry_count == 50)
         {
-            set_led(255,128,0);
+            set_led(50,25,0);
         }
         err = esp_wifi_connect();
     }
@@ -102,7 +100,7 @@ esp_err_t wifi_sta_do_connect(wifi_config_t wifi_config)
         retry_count ++;
         if (retry_count == 50)
         {
-            set_led(255,128,0);
+            set_led(50,25,0);
         }
     } while (ret != ESP_OK);
 
@@ -173,9 +171,9 @@ void print_all_netif_ips(const char *prefix)
 
 esp_err_t wifi_start_connect(void)
 {
-    if (wifi_connect() != ESP_OK)
+    while (wifi_connect() != ESP_OK)
     {
-        return ESP_FAIL;
+        continue;
     }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&wifi_shutdown));
 
